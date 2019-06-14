@@ -31,7 +31,7 @@ Write-output("<SUCCESS> Login to Azure Successful.")
 #specify Key vaults to exclude
 $excludedKeyVaults = ""
 #specify Applications object id to grant access policies to
-$objectId = "f81cf819-f710-4c99-abd0-2af561dba51e"
+$ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
 
 
 try
@@ -62,7 +62,7 @@ foreach($KeyVault in $KeyVaults)
            # Iterate all object ids to grant access policies to
                Write-output("<INFO> Granting access policies to objectId " + $objectId + " ...")
                $output = $null;
-               $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $objectId -PermissionsToKeys 'list' -PermissionsToSecrets 'list' -PermissionsToCertificates get, list 2>&1
+               $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $ServicePrincipalId -PermissionsToKeys 'list' -PermissionsToSecrets 'list' -PermissionsToCertificates get, list 2>&1
                 
                    if(!$output)
                    {
