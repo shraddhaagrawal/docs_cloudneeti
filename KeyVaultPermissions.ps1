@@ -31,7 +31,7 @@ Write-output("<SUCCESS> Login to Azure Successful.")
 #specify Key vaults to exclude
 $excludedKeyVaults = ""
 #specify Applications object id to grant access policies to
-$objectIds = "f81cf819-f710-4c99-abd0-2af561dba51e"
+$objectId = "f81cf819-f710-4c99-abd0-2af561dba51e"
 
 
 try
@@ -60,8 +60,6 @@ foreach($KeyVault in $KeyVaults)
        else {      
            Write-output("<INFO> Start handling Key vault " + $KeyVault.VaultName + "...")
            # Iterate all object ids to grant access policies to
-           foreach($objectId in $objectIds)
-           {
                Write-output("<INFO> Granting access policies to objectId " + $objectId + " ...")
                $output = $null;
                $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $objectId -PermissionsToKeys 'list' -PermissionsToSecrets 'list' -PermissionsToCertificates get, list 2>&1
@@ -72,7 +70,6 @@ foreach($KeyVault in $KeyVaults)
                    } else {
                        Write-output("<ERROR> Failed to grant access policies to objectId " + $objectId)
                    }
-           }
 
            #Optional - print the updated key vault object access policies
            #$CurrentKeyvault = Get-AzureRMKeyVault -VaultName $KeyVault.VaultName
