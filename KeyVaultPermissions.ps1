@@ -4,10 +4,10 @@ try
 
    # Get the connection "AzureRunAsConnection "
    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName 
-   Write-output("<INFO> Logging in to Azure...");
-   Write-output("<INFO> TenantId:              " + $servicePrincipalConnection.TenantId)
-   Write-output("<INFO> ApplicationId:         " + $servicePrincipalConnection.ApplicationId)
-   Write-output("<INFO> CertificateThumbprint: " + $servicePrincipalConnection.CertificateThumbprint)
+   Write-output("Logging in to Azure...");
+   Write-output("TenantId:              " + $servicePrincipalConnection.TenantId)
+   Write-output("ApplicationId:         " + $servicePrincipalConnection.ApplicationId)
+   Write-output("CertificateThumbprint: " + $servicePrincipalConnection.CertificateThumbprint)
 
    Add-AzureRmAccount `
        -ServicePrincipal `
@@ -26,7 +26,7 @@ catch{
    }
 }
 
-Write-output("<SUCCESS> Login to Azure Successful.")
+Write-output("Login to Azure Successful.")
 
 #specify Key vaults to exclude
 $excludedKeyVaults = ""
@@ -37,7 +37,7 @@ $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
 try
 {
    #List all the subscription key vaults...
-   Write-output("<INFO> Listing key vaults...")
+   Write-output("Listing key vaults...")
    $KeyVaults = Get-AzureRmKeyVault # Note that Azure Documention specifies as Get-AzureRMKeyVault (Capital M which cause a failure)
    Write-output("<SUCCESS> Found " + $KeyVaults.Count + " Key vaults")
 } catch {
@@ -68,12 +68,8 @@ foreach($KeyVault in $KeyVaults)
                    {
                        Write-output("<SUCCESS> " + $KeyVault.VaultName + " Access policies granted successfully for objectId " + $objectId)  
                    } else {
-                       Write-output("<ERROR> Failed to grant access policies to objectId " + $objectId)
+                       Write-output "Failed to grant access policies to objectId " + $ServicePrincipalId
                    }
-
-           #Optional - print the updated key vault object access policies
-           #$CurrentKeyvault = Get-AzureRMKeyVault -VaultName $KeyVault.VaultName
-           #Write-output($CurrentKeyvault.AccessPoliciesText)
 
            Write-output("<INFO> Finshied handling key vault " + $KeyVault.VaultName)
        }
