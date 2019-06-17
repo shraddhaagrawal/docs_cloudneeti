@@ -4,10 +4,10 @@ try
 
    # Get the connection "AzureRunAsConnection "
    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName 
-   Write-output("<INFO> Logging in to Azure...");
-   Write-output("<INFO> TenantId:              " + $servicePrincipalConnection.TenantId)
-   Write-output("<INFO> ApplicationId:         " + $servicePrincipalConnection.ApplicationId)
-   Write-output("<INFO> CertificateThumbprint: " + $servicePrincipalConnection.CertificateThumbprint)
+   Write-output("Logging in to Azure...");
+   Write-output("TenantId:              " + $servicePrincipalConnection.TenantId)
+   Write-output("ApplicationId:         " + $servicePrincipalConnection.ApplicationId)
+   Write-output("CertificateThumbprint: " + $servicePrincipalConnection.CertificateThumbprint)
 
    Add-AzureRmAccount `
        -ServicePrincipal `
@@ -26,10 +26,8 @@ catch{
    }
 }
 
-Write-output("<SUCCESS> Login to Azure Successful.")
+Write-output("Login to Azure Successful.")
 
-#specify Key vaults to exclude
-$excludedKeyVaults = ""
 #specify Applications object id to grant access policies to
 $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
 
@@ -37,11 +35,11 @@ $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
 try
 {
    #List all the subscription key vaults...
-   Write-output("<INFO> Listing key vaults...")
-   $KeyVaults = Get-AzureRmKeyVault # Note that Azure Documention specifies as Get-AzureRMKeyVault (Capital M which cause a failure)
-   Write-output("<SUCCESS> Found " + $KeyVaults.Count + " Key vaults")
+   Write-output(" Listing key vaults...")
+   $KeyVaults = Get-AzureRmKeyVault
+   Write-output("Found " + $KeyVaults.Count + " Key vaults")
 } catch {
-   Write-output("<ERROR> Failed to list KeyVaults:")
+   Write-output("Failed to list KeyVaults:")
    Write-Error -Message $_.Exception
    throw $_.Exception
 }
@@ -51,35 +49,28 @@ try
 foreach($KeyVault in $KeyVaults)
 {
    try
-   {
-       # Skip specified excluded key vaults
-       if($excludedKeyVaults -contains $KeyVault.VaultName)
-       {
-           Write-output("<WARN> Skipping " + $KeyVault.VaultName + ". Set in excluded Key vaults.")
-       }
-       else {      
-           Write-output("<INFO> Start handling Key vault " + $KeyVault.VaultName + "...")
+   {   
+           Write-output(" Start handling Key vault " + $KeyVault.VaultName + "...")
            # Iterate all object ids to grant access policies to
-               Write-output("<INFO> Granting access policies to objectId " + $objectId + " ...")
+               Write-output(" Granting access policies to objectId " + $ServicePrincipalId + " ...")
                $output = $null;
-               $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $ServicePrincipalId -PermissionsToKeys 'list' -PermissionsToSecrets 'list' -PermissionsToCertificates get, list 2>&1
+               $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $ServicePrincipalId -PermissionsToKeys 'list' -PermissionsToSecrets 'list'
                 
                    if(!$output)
                    {
-                       Write-output("<SUCCESS> " + $KeyVault.VaultName + " Access policies granted successfully for objectId " + $objectId)  
+                       Write-output(" " + $KeyVault.VaultName + "Access policies granted successfully for objectId " + $ServicePrincipalId)  
                    } else {
-                       Write-output("<ERROR> Failed to grant access policies to objectId " + $objectId)
+                       Write-output("Failed to grant access policies to objectId " + $ServicePrincipalId)
                    }
 
            #Optional - print the updated key vault object access policies
            #$CurrentKeyvault = Get-AzureRMKeyVault -VaultName $KeyVault.VaultName
            #Write-output($CurrentKeyvault.AccessPoliciesText)
 
-           Write-output("<INFO> Finshied handling key vault " + $KeyVault.VaultName)
-       }
+           Write-output(" Finshied handling key vault " + $KeyVault.VaultName)
    }
    catch {
-       Write-output("<ERROR> Failed to set permissions for KeyVault " + $KeyVault.VaultName)
+       Write-output("Failed to set permissions for KeyVault " + $KeyVault.VaultName)
        Write-Error -Message $_.Exception
        throw $_.Exception
    }
