@@ -26,9 +26,10 @@ Write-output("Getting Variable value for Service Principal Id")
 try
 {
   $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
-  if($ServicePrincipalId -ne $null)
+  if($ServicePrincipalId -eq $null)
   {
-      Write-output("Failed to get service principal Id")
+      Write-output("Failed to get service principal Id variable")
+      Exit
   }
 }
 catch
@@ -72,3 +73,5 @@ foreach($KeyVault in $KeyVaults)
        throw $_.Exception
    }
 }
+
+Write-output("Script execution completed")
