@@ -22,11 +22,11 @@ catch{
 }
 
 Write-output("Login to Azure Successful.")
-Write-output("Getting Variables:")
+Write-output("Getting Variable value for Service Principal Id")
 try
 {
   $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
-  if($ServicePrincipalId == null)
+  if($ServicePrincipalId -ne $null)
   {
       Write-output("Failed to get service principal Id")
   }
@@ -55,17 +55,16 @@ foreach($KeyVault in $KeyVaults)
 {
    try
    {   
-               Write-output(" Granting list access policies to service principal " + $ServicePrincipalId + "On Key Vault " + $KeyVault.VaultName)
+               Write-output(" Granting list access policies to service principal " + $ServicePrincipalId + " On Key Vault " + $KeyVault.VaultName)
                $output = $null;
                $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $ServicePrincipalId -PermissionsToKeys 'list' -PermissionsToSecrets 'list'
                 
                    if(!$output)
                    {
-                       Write-output(" " + $KeyVault.VaultName + "Access policies granted successfully to service principal " + $ServicePrincipalId)  
+                       Write-output("Access policies granted successfully to service principal " + $ServicePrincipalId + " On Key Vault " + $KeyVault.VaultName)  
                    } else {
-                       Write-output("Failed to grant access policies to service principal " + $ServicePrincipalId)
+                       Write-output("Failed to set permissions for KeyVault " + $KeyVault.VaultName)
                    }
-                Write-output(" Successfully assigned access policies on " + $KeyVault.VaultName)
    }
    catch {
        Write-output("Failed to set permissions for KeyVault " + $KeyVault.VaultName)
