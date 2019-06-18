@@ -2,10 +2,13 @@ $connectionName = "AzureRunAsConnection"
 try
 {
 
-   # Get the connection "AzureRunAsConnection"
+   # Get the connection "AzureRunAsConnection "
    $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName 
-   Write-Host("Logging in to Azure using $connectionName");
-   Add-AzureRmAccount -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint -ApplicationId $servicePrincipalConnection.ApplicationId -TenantId $servicePrincipalConnection.TenantId
+   Add-AzureRmAccount `
+       -ServicePrincipal `
+       -TenantId $servicePrincipalConnection.TenantId `
+       -ApplicationId $servicePrincipalConnection.ApplicationId `
+       -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint
 }
 catch{
    if (!$servicePrincipalConnection)
@@ -13,48 +16,60 @@ catch{
        $ErrorMessage = "Connection $connectionName not found."
        throw $ErrorMessage
    } else{
-       Write-Host -Message $_.Exception -ForegroundColor Red
+       Write-Error -Message $_.Exception
        throw $_.Exception
    }
 }
 
-Write-Host("Login to Azure Successful.")
-
-#specify Applications object id to grant access policies to
-$ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
-
-
+Write-output("Login to Azure Successful.")
+Write-output("Getting Variables:")
 try
 {
-   #List all the subscription key vaults...
-   Write-Host(" Listing key vaults...") -ForegroundColor Yellow
-   $KeyVaults = Get-AzureRmKeyVaults
-} catch {
-   Write-Host("Failed to list KeyVaults:") -ForegroundColor Red
-   Write-Host -Message $_.Exception -ForegroundColor Red
+  $ServicePrincipalId = Get-AutomationVariable -Name "ServicePrincipalId"
+  if($ServicePrincipalId == null)
+  {
+      Write-output("Failed to get service principal Id")
+  }
+}
+catch
+{
+   Write-output("Failed to get service principal Id")
+   Write-Error -Message $_.Exception
    throw $_.Exception
 }
 
 
-# Iterate all key vaults found
+
+try
+{
+   Write-output("Getting list of key vaults")
+   $KeyVaults = Get-AzureRmKeyVault
+} catch {
+   Write-output("Failed to list KeyVaults")
+   Write-Error -Message $_.Exception
+   throw $_.Exception
+}
+
+
 foreach($KeyVault in $KeyVaults)
 {
    try
    {   
-               Write-Host(" Granting list access policies to service principal " + $ServicePrincipalId + "On Key Vault" + $KeyVault.Name) -ForegroundColor Yellow
+               Write-output(" Granting list access policies to service principal " + $ServicePrincipalId + "On Key Vault " + $KeyVault.VaultName)
                $output = $null;
                $output = Set-AzureRmKeyVaultAccessPolicy -BypassObjectIdValidation -VaultName $KeyVault.VaultName -ObjectId $ServicePrincipalId -PermissionsToKeys 'list' -PermissionsToSecrets 'list'
                 
                    if(!$output)
                    {
-                       Write-Host(" " + $KeyVault.VaultName + "Access policies granted successfully to service principal " + $ServicePrincipalId)  -ForegroundColor Green
+                       Write-output(" " + $KeyVault.VaultName + "Access policies granted successfully to service principal " + $ServicePrincipalId)  
                    } else {
-                       Write-Host("Failed to grant access policies to to service principal " + $ServicePrincipalId) -ForegroundColor Red
+                       Write-output("Failed to grant access policies to service principal " + $ServicePrincipalId)
                    }
+                Write-output(" Successfully assigned access policies on " + $KeyVault.VaultName)
    }
    catch {
-       Write-Host("Failed to set permissions for KeyVault " + $KeyVault.VaultName) -ForegroundColor Red
-       Write-Host -Message $_.Exception -ForegroundColor Red
+       Write-output("Failed to set permissions for KeyVault " + $KeyVault.VaultName)
+       Write-Error -Message $_.Exception
        throw $_.Exception
    }
 }
